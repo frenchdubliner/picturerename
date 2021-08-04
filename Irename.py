@@ -11,9 +11,6 @@
 #          Those numbers start from 00001 and increase but start again with 00001
 #          when a new memory is used leading to conflicting filenames
 #Solution : Add Year Month and day in the filename
-#Possible issue : If you change the card in the middle of the day,
-#                 conflicting names could still appear.
-#                 %Y%m%d could be replaced by %Y%m%d%H%M%S in that case
 
 
 import pyexiv2
@@ -23,18 +20,17 @@ import shutil
 
 
 def main():
-    print('Hello, ' + os.getlogin() +'!')
     src_files = []
     # Loop on arguments and find *jpg and *JPG
     for arg in sys.argv[1:]:
         for dirpath,dirnames,filenames in os.walk(arg):
             for file in filenames:
                 src = ''
-                if file.endswith(".jpg") or file.endswith(".JPG"):
+                if (file.endswith(".jpg") or file.endswith(".JPG")) and file.startswith("DSC"):
                     src_files.append(os.path.join(dirpath,file))
 
     for file in src_files:
-        #print file
+        #read metadata
         metadata = pyexiv2.ImageMetadata(file)
         metadata.read()
         
@@ -43,10 +39,11 @@ def main():
         except KeyError:
             tag = metadata['Exif.Image.DateTime']
         try:
-            string_of_time = tag.value.strftime('%Y%m%d')
+            string_of_time = tag.value.strftime('%Y%m%d%H%M%S')
         except AttributeError:
             print ('--> %s lacks creation time data. Deal with it manually' % file)
             pass
+        #rename file
         os.rename(file,add_date_to_filename(file,string_of_time))
 
 def add_date_to_filename(file_name,date_of_shot):
